@@ -13,9 +13,9 @@ use specs::*;
 
 use crate::attacking::AttackExecutionSystem;
 use crate::color::{Color, render_colored_cells};
-use crate::enemy_ai::{EnemyOfTheComputer, EnemyAISystem};
+use crate::enemy_ai::{EnemyOfTheComputer, ControlledByEnemyAI, EnemyAISystem};
 use crate::input::{InputData, MouseLocation, MouseLocationInputSystem};
-use crate::living::{HP, render_hp};
+use crate::living::{HP, DeathExecutionSystem, render_hp};
 use crate::map::{Map, hexc_to_gridc};
 use crate::position::{Position, MoveInputRequest, MoveInputSystem, MoveAction, MoveActionExecutionSystem, render_move};
 use crate::render::render;
@@ -33,11 +33,12 @@ fn main() {
 	world.register::<MoveAction>();
 	world.register::<HP>();
 	world.register::<EnemyOfTheComputer>();
+	world.register::<ControlledByEnemyAI>();
 
 	let player = world.create_entity()
 		.with(Position(1, 2))
 		.with(Color([0.0, 0.6, 0.0, 1.0]))
-		.with(HP { hp: 10, max_hp: 10 })
+		.with(HP { hp: 100, max_hp: 100 })
 		.with(MoveInputRequest)
 		.with(EnemyOfTheComputer)
 		.build();
@@ -46,20 +47,20 @@ fn main() {
 		.with(Position(5, 5))
 		.with(Color([0.8, 0.0, 0.6, 1.0]))
 		.with(HP { hp: 10, max_hp: 10 })
+		.with(ControlledByEnemyAI)
 		.build();
 	
 	let enemy2 = world.create_entity()
 		.with(Position(5, 3))
 		.with(Color([0.6, 0.0, 0.8, 1.0]))
 		.with(HP { hp: 10, max_hp: 10 })
+		.with(ControlledByEnemyAI)
 		.build();
 	
 	let mut grid = Map::new(10, 10);
 	grid.cells[hexc_to_gridc(1, 2)].0.add(player.id());
 	grid.cells[hexc_to_gridc(5, 5)].0.add(enemy1.id());
 	grid.cells[hexc_to_gridc(5, 3)].0.add(enemy2.id());
-
-	let enemies = [enemy1, enemy2];
 	
 	world.add_resource(grid);
 	world.add_resource(InputData(None));
@@ -80,6 +81,7 @@ fn main() {
 	let mut execute_dispatcher = DispatcherBuilder::new()
 		.with(AttackExecutionSystem, "AttackExecutionSystem", &[])
 		.with(MoveActionExecutionSystem, "MoveActionExecutionSystem", &["AttackExecutionSystem"])
+		.with(DeathExecutionSystem, "DeathExecutionSystem", &["AttackExecutionSystem"])
 		.build();
 
 	while let Some(event) = window.next() {
@@ -100,12 +102,15 @@ fn main() {
 		}
 		if world.read_resource::<CurrentPlayer>().0 == None {
 			execute_dispatcher.dispatch(&world.res);
+			world.maintain();
 
-			for enemy in &enemies {
-				(*world.write_resource::<CurrentPlayer>()).0 = Some(*enemy);
+			for (enemy, _) in (&world.entities(), &world.read_storage::<ControlledByEnemyAI>()).join() {
+				(*world.write_resource::<CurrentPlayer>()).0 = Some(enemy);
 				enemy_dispatcher.dispatch(&world.res);
 				execute_dispatcher.dispatch(&world.res);
 			}
+			
+			world.maintain();
 
 			(*world.write_resource::<CurrentPlayer>()).0 = Some(player);
 		}

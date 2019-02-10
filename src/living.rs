@@ -1,5 +1,5 @@
 use piston_window::{Context, G2d, line};
-use specs::{Component, DenseVecStorage, ReadStorage, Join};
+use specs::{System, Component, DenseVecStorage, ReadStorage, Entities, Join};
 use specs_derive::Component;
 
 use crate::position::Position;
@@ -8,6 +8,23 @@ use crate::position::Position;
 pub struct HP {
 	pub hp: i32,
 	pub max_hp: i32,
+}
+
+pub struct DeathExecutionSystem;
+impl<'a> System<'a> for DeathExecutionSystem {
+	type SystemData = (ReadStorage<'a, HP>, Entities<'a>);
+
+	fn run(&mut self, (hps, entities): Self::SystemData) {
+		let mut killed = Vec::new();
+		for (entity, hp) in (&entities, &hps).join() {
+			if hp.hp <= 0 {
+				killed.push(entity);
+			}
+		}
+		for entity in killed {
+			entities.delete(entity).unwrap();
+		}
+	}
 }
 
 type RenderSystemData<'a> = (

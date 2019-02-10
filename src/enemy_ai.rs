@@ -4,15 +4,13 @@ use specs_derive::Component;
 use crate::position::{Position, MoveAction};
 use crate::turns::CurrentPlayer;
 
-#[derive(Component)]
+#[derive(Component, Default)]
 #[storage(NullStorage)]
 pub struct EnemyOfTheComputer;
 
-impl Default for EnemyOfTheComputer {
-	fn default() -> Self {
-		EnemyOfTheComputer
-	}
-}
+#[derive(Component, Default)]
+#[storage(NullStorage)]
+pub struct ControlledByEnemyAI;
 
 pub struct EnemyAISystem;
 impl<'a> System<'a> for EnemyAISystem {
