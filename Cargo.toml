@@ -1,0 +1,12 @@
+[package]
+name = "voia"
+version = "0.1.0"
+authors = ["Iikka Hauhio <iikka@kaivos.org>"]
+edition = "2018"
+
+[dependencies]
+piston_window = "*"
+specs = "*"
+specs-derive = "*"
+hibitset = "*"
+grid = { git = "https://github.com/VoxWave/grid.git"}
