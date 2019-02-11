@@ -10,3 +10,4 @@ specs = "*"
 specs-derive = "*"
 hibitset = "*"
 grid = { git = "https://github.com/VoxWave/grid.git"}
+rand = "*"

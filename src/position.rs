@@ -1,3 +1,4 @@
+use hibitset::BitSetLike;
 use piston_window::{Button, ButtonArgs, ButtonState, Input, MouseButton, Context, G2d, circle_arc};
 use specs::{Component, VecStorage, HashMapStorage, System, Read, Write, ReadStorage, WriteStorage, Entities, Join};
 use specs_derive::Component;
@@ -69,9 +70,14 @@ impl<'a> System<'a> for MoveActionExecutionSystem {
 		let mut moved_entities = Vec::new();
 		for (entity, move_action, position) in (&entities, &move_actions, &mut positions).join() {
 			let MoveAction(tx, ty) = *move_action;
+			let target = &mut map.cells[hexc_to_gridc(tx, ty)].0;
 
+			if !target.is_empty() {
+				continue;
+			}
+
+			target.add(entity.id());
 			map.cells[hexc_to_gridc(position.0, position.1)].0.remove(entity.id());
-			map.cells[hexc_to_gridc(tx, ty)].0.add(entity.id());
 
 			*position = Position(tx, ty);
 

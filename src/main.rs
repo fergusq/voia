@@ -1,5 +1,6 @@
 mod attacking;
 mod color;
+mod dice;
 mod enemy_ai;
 mod input;
 mod living;
@@ -11,8 +12,9 @@ mod turns;
 use piston_window::{PistonWindow, WindowSettings, Event, clear};
 use specs::*;
 
-use crate::attacking::AttackExecutionSystem;
+use crate::attacking::{Attack, AttackExecutionSystem};
 use crate::color::{Color, render_colored_cells};
+use crate::dice::DiceSpec;
 use crate::enemy_ai::{EnemyOfTheComputer, ControlledByEnemyAI, EnemyAISystem};
 use crate::input::{InputData, MouseLocation, MouseLocationInputSystem};
 use crate::living::{HP, DeathExecutionSystem, render_hp};
@@ -32,6 +34,7 @@ fn main() {
 	world.register::<MoveInputRequest>();
 	world.register::<MoveAction>();
 	world.register::<HP>();
+	world.register::<Attack>();
 	world.register::<EnemyOfTheComputer>();
 	world.register::<ControlledByEnemyAI>();
 
@@ -39,6 +42,7 @@ fn main() {
 		.with(Position(1, 2))
 		.with(Color([0.0, 0.6, 0.0, 1.0]))
 		.with(HP { hp: 100, max_hp: 100 })
+		.with(Attack(DiceSpec(1, 6, 1)))
 		.with(MoveInputRequest)
 		.with(EnemyOfTheComputer)
 		.build();
@@ -46,14 +50,16 @@ fn main() {
 	let enemy1 = world.create_entity()
 		.with(Position(5, 5))
 		.with(Color([0.8, 0.0, 0.6, 1.0]))
-		.with(HP { hp: 10, max_hp: 10 })
+		.with(HP { hp: 20, max_hp: 20 })
+		.with(Attack(DiceSpec(2, 6, -1)))
 		.with(ControlledByEnemyAI)
 		.build();
 	
 	let enemy2 = world.create_entity()
 		.with(Position(5, 3))
 		.with(Color([0.6, 0.0, 0.8, 1.0]))
-		.with(HP { hp: 10, max_hp: 10 })
+		.with(HP { hp: 20, max_hp: 20 })
+		.with(Attack(DiceSpec(2, 6, 0)))
 		.with(ControlledByEnemyAI)
 		.build();
 	
@@ -109,7 +115,7 @@ fn main() {
 				enemy_dispatcher.dispatch(&world.res);
 				execute_dispatcher.dispatch(&world.res);
 			}
-			
+
 			world.maintain();
 
 			(*world.write_resource::<CurrentPlayer>()).0 = Some(player);
