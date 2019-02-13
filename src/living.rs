@@ -3,6 +3,7 @@ use specs::{System, Component, DenseVecStorage, Write, ReadStorage, Entities, Jo
 use specs_derive::Component;
 
 use crate::map::{Map, hexc_to_gridc};
+use crate::name::Name;
 use crate::position::Position;
 
 #[derive(Component)]
@@ -13,12 +14,15 @@ pub struct HP {
 
 pub struct DeathExecutionSystem;
 impl<'a> System<'a> for DeathExecutionSystem {
-	type SystemData = (ReadStorage<'a, Position>, ReadStorage<'a, HP>, Write<'a, Map>, Entities<'a>);
+	type SystemData = (ReadStorage<'a, Position>, ReadStorage<'a, HP>, ReadStorage<'a, Name>, Write<'a, Map>, Entities<'a>);
 
-	fn run(&mut self, (positions, hps, mut map, entities): Self::SystemData) {
+	fn run(&mut self, (positions, hps, names, mut map, entities): Self::SystemData) {
 		let mut killed = Vec::new();
 		for (entity, hp, position) in (&entities, &hps, &positions).join() {
 			if hp.hp <= 0 {
+				let name = names.get(entity).map(|n| n.0).unwrap_or("Nimetön hahmo");
+				println!("{} kuoli.", name);
+
 				killed.push(entity);
 				map.cells[hexc_to_gridc(position.0, position.1)].0.remove(entity.id());
 			}
